@@ -1,0 +1,25 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.egg-info/
+.venv/
+.env
+.mypy_cache/
+.pytest_cache/
+.coverage
+dist/
+build/
+
+# uv
+uv.lock
+
+# Artifacts
+.isolated/
+.mcp-output/
+
+# Node
+
+.screenshots
+.mcp-output

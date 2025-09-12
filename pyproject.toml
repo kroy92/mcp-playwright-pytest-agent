@@ -1,0 +1,12 @@
+[project]
+name = "mcp-playwright-pytest-agent"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "openai-agents>=0.2.11",
+    "pyotp>=2.9.0",
+    "pytest>=8.4.2",
+    "pytest-asyncio>=1.1.0",
+]
