@@ -257,7 +257,7 @@ To ensure your tests **enforce business rules reliably**, we extend the default 
 
 ```python
 class CustomRunResult(RunResult):
-        phone_validation_passed: bool = Field(False, description="True if phone validation message appeared, else False")
+        phone_validation_passed: bool = Field(description="True if phone validation message appeared, else False")
 ```
 
 This ensures your automation **guides the AI and verifies critical validations**, making tests more robust and reliable.
