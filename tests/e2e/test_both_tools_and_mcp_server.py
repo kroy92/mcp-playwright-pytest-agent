@@ -40,7 +40,7 @@ async def test_create_lead_with_mcp_ado():
     username = os.getenv("D365_USERNAME")
     password = os.getenv("D365_PASSWORD")
     lead_name = "MCP Started -1"
-    FIRST_NAME = "MCP Started"
+    FIRST_NAME = "MCP"
     LAST_NAME = "MCP Started"
     user_step = f"""
     
@@ -51,29 +51,28 @@ async def test_create_lead_with_mcp_ado():
     NOTE: DEFAULT STEP TIMEOUT : 30 SECONDS> Please try till 30 seconds for each step before failing.
     NOTE: If any unexpected popups appear, close them and continue.
     ** TRY SELF HEALING IF ELEMENTS NOT FOUND **
-    1. Go to Dynamics URL {url} → Page should load
+    1. Go to Dynamics URL {url}/main.aspx?appid=48a98975-d490-f011-b4cc-000d3a3b863b
 2. Type "{username}" into Username → Password field should appear
 3. Type "{password}" into Password → Main page or MFA prompt should load
 4. If MFA appears, enter code → Next page should load
 5. If "Stay signed in?" prompt appears, click "No" → Main page should load
 6. Wait until logged in → Main page should show - This may take up to 60 seconds
-7. Click "Sales Hub" Applications → Sales Hub should open
-8. Wait until sitemap-entity-Lead is visible - may take upto 60 seconds
-9. Click "Leads - sitemap-entity" in sitemap → Leads grid should appear
-10. Close any popups, then click "Read Only Grid" → Read-only grid should activate
-11. If Copilot tab is open, close it → Copilot tab should disappear
-12. Click "New Lead" → Lead form should open
-13. Enter "{lead_name} - Another Again" in Topic → Field should accept
-14. Enter "{FIRST_NAME}" in First Name → Field should accept
-15. Click Accept Suggestion if it appears → Suggestion should be accepted (if appeared)
-16. Enter "{LAST_NAME} Again" in Last Name → Field should accept 
-17. Save Lead → Lead should be saved. There should be no error notifications/warnings/messages. **FAIL** if any appear. **FAIL** if lead is not Saved
-18. Capture Lead Name from header → It should match "{FIRST_NAME} {LAST_NAME}"
-19. Click "Qualify Command"  → Qualify dialog box should appear (fail if Duplicate dialog appears)
+7. Close any popups that appear → No popups should remain
+8. then click "Read Only Grid" → Read-only grid should activate
+9. If Copilot tab is open, close it → Copilot tab should disappear
+10. Click "New Lead" → Lead form should open
+11. Enter "{lead_name}" in Topic → Field should accept
+12. Enter "{FIRST_NAME}" in First Name → Field should accept
+13. Click Accept Suggestion if it appears → Suggestion should be accepted (if appeared)
+14. Enter "{LAST_NAME}" in Last Name → Field should accept
+15. Save Lead → Lead should be saved. There should be no error notifications/warnings/messages. **FAIL** if any appear. **FAIL** if lead is not Saved
+16. Capture Lead Name from header → It should match "{FIRST_NAME} {LAST_NAME}"
+17. Click "Qualify Command"
     - Last Time You clicked Qualify Button on Business Process Flow. Dont do that. Click on Command Bar Button. check role=menuitem title=Qualify
-20. In dialog, click "Qualify" → Finish button should appear
-21. Click "Finish" → Opportunity page should load
-22. Close Browser → No browser left running
+18. Verify → Qualify dialog box should appear (fail if Duplicate dialog appears)
+19. In dialog, click "Qualify" → Finish button should appear
+20. Click "Finish" → Opportunity page should load
+21. Close Browser → No browser left running
 
 
 * Bug Creation Logic for Test Failures if the test Failed **
@@ -90,10 +89,11 @@ async def test_create_lead_with_mcp_ado():
     class CustomAssertions(RunResult):
         # check if duplicate Account or Contact dialog appeared in step 17
         is_duplicate_dialog_appeared: bool = Field(..., description="Success conditions : Whether Duplicate Account or Contact dialog appeared in step 17")
+        is_Qualify_button_clicked: bool = Field(..., description="Success conditions : Whether Qualify button was clicked successfully in step 19. FAIL if not clicked")
 
         is_opportunity_page_created_and_loaded: bool = Field(...,description="Success conditions : Whether the New Opportunity was created and Opportunity Page loaded successfully")
         is_step_21_successful: bool = Field(..., description="Success conditions : Whether Step 21 was successful")
-        opp_id_created: str = Field(..., description="The Opportunity ID , NOT LEAD ID created if Test is Passed, else set value to 'TEST FAILED'")
+        opp_id_created: str = Field(..., description="The Opportunity GUID , NOT LEAD GUID created if Test is Passed, else set value to 'TEST FAILED'")
         is_lead_converted_to_opportunity: bool = Field(...,description="Success conditions: Whether the Lead was converted to Opportunity successfully. FAIL IF NOT CONVERTED")
 
     async with MCPServerStdio(params=ado_mcp_params, client_session_timeout_seconds=30) as ado_tools:
