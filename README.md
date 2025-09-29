@@ -2,6 +2,7 @@
 
 **mcp-playwright-pytest-agent** is an experimental project that combines **Playwright** for browser automation, **Pytest** for structured testing, and the **Model Context Protocol (MCP)** for context-aware orchestration. It’s designed for developers who want to explore **next-gen automation** while learning and having fun.
 
+<img src="mcp-playwright-pytest-agents.png" alt="Architecture Diagram" width="800"/>
 
 
 ## Why This Project?
