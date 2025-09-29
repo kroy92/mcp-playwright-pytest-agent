@@ -20,6 +20,7 @@ class Settings(BaseSettings):
     mcp_isolated_dir: Path = Path(".isolated")
     mcp_output_dir: Path = Path(".mcp-output")
     viewport: str = os.getenv("VIEWPORT", "1600,900")
+    timeout_seconds: int = int(os.getenv("TIMEOUT_SECONDS", "5000"))
 
     # Agent behavior
     default_step_timeout_seconds: int = int(os.getenv("DEFAULT_STEP_TIMEOUT_SECONDS", "30"))

@@ -19,6 +19,7 @@ class MCPServerManager:
                 "--isolated",
                 f"--viewport-size={self.settings.viewport}",
                 f"--output-dir={str(self.settings.mcp_isolated_dir)}",
+                f"--timeout-action={self.settings.timeout_seconds}",
                 "--caps=vision,verify",
             ],
         }

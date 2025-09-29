@@ -11,6 +11,7 @@ load_dotenv(override=True)
 import pyotp
 
 
+# Define a tool to generate TOTP codes for MFA
 @function_tool()
 def get_totp() -> str:
     """Generate a MFA code for Login."""
@@ -42,8 +43,10 @@ def test_export_accounts(flow_runner, steps_path: str):
     steps_template = pathlib.Path(steps_path).read_text(encoding="utf-8")
     steps = steps_template.format(url=url, username=username, password=password)
 
+    # Provide the custom tool to the flow runner in parameter `tools`
     result = flow_runner.run_flow(steps, RunResult, tools=[get_totp])
     print(result)
+    
     assert result.status == "PASS", f"Failed: {result.exception} at {result.failed_step_id}"
     for step in result.steps:
         assert step.status == "PASS", f"Step {step.step_id} failed: {step.exception}. Expected: {step.expected_result}, Actual: {step.actual_result}"

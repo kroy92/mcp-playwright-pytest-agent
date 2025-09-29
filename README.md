@@ -451,6 +451,61 @@ FAILED tests/e2e/test_custom_assertions.py::test_generic_phone_number[tests/data
 
 This demonstrates **how custom assertions can catch business rule violations** even when the AI-marked status indicates success.
 
+
+
+## **Bring Your Own Tools**
+
+Sometimes the default agent capabilities may not be enough. For example, you may need to generate an MFA code, fetch values from an external service, or create dynamic test data. In such cases, you can bring your own tools and plug them into the flow runner.
+
+A tool is a normal Python function decorated with `@function_tool`. Once registered, the agent can **autonomously decide** to call it whenever required by the test steps.
+
+```python
+from agents.tool import function_tool # Import the decorator
+
+# Define a tool to generate TOTP codes for MFA
+@function_tool()
+def get_totp() -> str:
+    """Generate a MFA code for Login."""
+    mfa_key = os.getenv("D365_MFA_KEY")  # Not required by default
+    if not mfa_key:
+        raise ValueError("MFA key is not configured.")
+    return pyotp.TOTP(mfa_key).now()
+```
+
+The above function reads the secret key from `D365_MFA_KEY` and returns a one-time code.
+
+The tool is then passed into the flow runner:
+
+```python
+result = flow_runner.run_flow(steps, RunResult, tools=[get_totp])
+```
+
+This ensures the agent generates the code just-in-time, instead of relying on an expired value. Calling the function directly and placing the result in your test steps file will not work, because the code will expire before the step is executed.
+
+This behavior can be demonstrated by running:
+
+```bash
+uv run pytest .\tests\e2e\test_example_using_tools.py
+```
+
+use - s flag to see result of all steps
+
+```bash
+uv run pytest .\tests\e2e\test_example_using_tools.py
+```
+
+**How It Works Under the Hood**
+
+When you decorate a function with `@function_tool`, the Agent SDK does several things automatically:
+
+1. **Wraps the function with a schema definition** so the agent knows what inputs and outputs to expect.
+2. **Passes this schema to the LLM** when running your flow, so the model can understand the function signature.
+3. **Calls the function** whenever the agent decides it is needed during the flow.
+4. **Feeds the result back to the LLM**, allowing the agent to continue execution with the updated value — all without any extra code from you.
+
+This means that by just using the decorator, your function becomes a fully integrated tool that the agent can **autonomously decide** to call during test execution.
+
+
 ### Upcoming Sections
-1. Bring your own Tools
+
 2. Bring your own MCP servers on need basis
