@@ -2,7 +2,7 @@
 
 **mcp-playwright-pytest-agent** is an experimental project that combines **Playwright** for browser automation, **Pytest** for structured testing, and the **Model Context Protocol (MCP)** for context-aware orchestration. It’s designed for developers who want to explore **next-gen automation** while learning and having fun.
 
----
+
 
 ## Why This Project?
 
@@ -12,7 +12,7 @@
 
 This project tries to leverage Playwright MCP to create **context-driven automation tests**
 
----
+
 
 ## Key Features
 
@@ -22,7 +22,6 @@ This project tries to leverage Playwright MCP to create **context-driven automat
 - ✅ **Bring Your Own MCP Servers** – Connect to external MCP-based services for extended capabilities  
 - ✅ **Modular Design** – Flexible architecture for experimentation  
 
----
 
 ## Challenges & Learning Goals
 
@@ -31,7 +30,7 @@ This project tries to leverage Playwright MCP to create **context-driven automat
 - Orchestrating **multi-step, context-aware scenarios** with MCP  
 - Exploring **how AI agents can assist in real-world test automation**  
 
----
+
 
 This is not just a tool—it’s a **sandbox for ideas**. Perfect for anyone curious about **AI-assisted testing**, **context-aware automation**, and **modern testing workflows**. Whether you’re experimenting with MCP, building custom tools, or integrating advanced orchestration into your tests, this project gives you a starting point to learn and innovate.
 
@@ -72,14 +71,19 @@ Open the `.env` file in your editor and update the required values.
 Once everything is set up, run:
 
 ```bash
-uv run pytest -s .\tests\e2e\test_first_examples.py
+uv run pytest .\tests\e2e\test_first_examples.py
 ```
 
+To see detailed results of steps performed  use -s flag
+
+```bash
+uv run pytest -s .\tests\e2e\test_first_examples.py
+```
 ## **Basics**
 
 Here’s a simple, step-by-step explanation of your First test in plain words:
 
----
+
 
 ### 1. Imports
 
@@ -93,7 +97,7 @@ from playwright_agent.schemas.results import RunResult
 * `RunResult`: A structure to hold the **outcome of the test** (pass/fail, exceptions, etc.).
 * `__future__ import annotations`: Helps with **type hinting**, nothing to worry about for basic usage.
 
----
+
 
 ### 2. Create the Runner
 
@@ -103,7 +107,7 @@ runner = BaseFlowRunner()
 
 * You create an **instance of the runner**, which will execute your test flow.
 
----
+
 
 ### 3. Define the Test Function
 
@@ -114,23 +118,25 @@ def test_google_search_inline():
 * `test_google_search_inline` is a **test case**.
 * Pytest will automatically detect and run any function starting with `test_`.
 
----
+
 
 ### 4. Write the Steps
 
 ```python
 steps = """
-Open https://www.google.com
-Type "Playwright MCP Agent" into the search input and press Enter
-Wait for the results page to load
-Click the first result link
+Open https://the-internet.herokuapp.com/login
+Wait for the login form to appear
+Type "tomsmith" into the Username field
+Type "SuperSecretPassword!" into the Password field
+Click the Login button
+Wait for the message "You logged into a secure area!" to appear
 """
 ```
 
 * You describe the **test steps in plain English**.
 * The runner will **read these steps and perform them in the browser**.
 
----
+
 
 ### 5. Run the Steps
 
@@ -145,17 +151,18 @@ result = runner.run_flow(steps, RunResult)
   * `exception`: Any **error messages** if something failed.
   * `failed_step_id`: The **step that failed** (if any).
 
+
 ---
 
 ### 6. Print the Result
 
 ```python
 print(result)
-```
+````
 
 * Shows the **test result in the console**.
+* In **pytest**, `print()` output is only shown if you run tests with the `-s` flag:
 
----
 
 ### 7. Assert the Test Passed
 
@@ -166,7 +173,6 @@ assert result.status == "PASS", f"Failed: {result.exception} at {result.failed_s
 * Checks that the test **succeeded**.
 * If it **failed**, it will print which step failed and why.
 
----
 
 ## **Data-Driven Test: Running Multiple Flows from Files**
 
@@ -174,7 +180,7 @@ We can also **run the same test logic with different flow files** by using **Pyt
 
 ```python
 @pytest.mark.parametrize("steps_path", [
-    "tests/data/flows/google_search.md",
+    "tests/data/flows/failed_login.md",
     "tests/data/flows/demo_login.md",
 ])
 def test_generic_web_flows(steps_path: str):
@@ -189,10 +195,9 @@ def test_generic_web_flows(steps_path: str):
 * Pytest will **execute the test once for each file**, making it **data-driven**.
 * The flow steps are read from the file, executed by the runner, and the results are validated.
 
----
-
 
 ### Improving Reusability with Fixtures
+---
 
 Instead of creating the `runner` inside every test, we can use a **Pytest fixture** to manage it in one place. Fixtures let you define reusable setup code and inject it automatically into test functions.
 
@@ -232,15 +237,96 @@ def test_generic_web_flows(flow_runner, steps_path: str):
 This is demonstrated in test_from_files.py
 
 ```bash
-uv run pytest -s .\tests\e2e\test_from_files.py
+uv run pytest  .\tests\e2e\test_from_files.py
+```
+
+
+## **Default Assertions**
+
+In **MCP Playwright tests**, the overall **PASS/FAIL status** is determined by the AI agent. While this is usually reliable, it’s important to **verify each step explicitly** to catch hidden issues. Default assertions help ensure **both the flow and individual steps passed**.
+
+
+### 
+
+```python
+@pytest.mark.parametrize("steps_path", [
+    "tests/data/flows/verify_company_name.md",
+])
+def test_verify_company_name(flow_runner, steps_path: str):
+    # Read the markdown file with flow steps
+    steps = pathlib.Path(steps_path).read_text(encoding="utf-8")
+
+    # Run the flow
+    result = flow_runner.run_flow(steps, RunResult)
+    print(result)
+
+    # Assert overall flow passed
+    assert result.status == "PASS", f"Flow failed: {result.exception} at {result.failed_step_id}"
+
+    # Assert each step passed individually
+    for step in result.steps:
+        print(step, '\n')  # Print each step result if -s flag is enabled
+        assert step.status == "PASS", (
+            f"Step {step.step_id} failed: {step.exception}. "
+            f"Expected: {step.expected_result}, Actual: {step.actual_result}"
+        )
 ```
 
 ---
 
+### **What’s Happening Here**
+
+1. **Overall Flow Check**
+
+   ```python
+   assert result.status == "PASS"
+   ```
+
+   Confirms the test completed without AI-detected errors.
+
+2. **Step-by-Step Checks**
+
+   ```python
+   for step in result.steps:
+       assert step.status == "PASS"
+   ```
+
+   Validates that **every single step** in the flow executed successfully.
+
+3. **Helpful Failure Messages**
+   Each step assertion prints:
+
+   * Which **step failed** (`step.step_id`)
+   * The **exception**, if any
+   * The **expected result vs actual result**
+
+
+
+✅ **Takeaway:**
+Default assertions provide **step-level safety nets**, ensuring that even if the AI marks the flow as passed, no hidden failures go unnoticed.
+
+
+
+This is demonstrated in `test_default_assertions.py`
+
+```bash
+uv run pytest  .\tests\e2e\test_default_assertions.py
+```
+To see result of each step, enable -s flag
+
+
+```bash
+uv run pytest -s .\tests\e2e\test_default_assertions.py
+```
+
+While these default assertions provide a safety net, there may be situations where the AI **may still mark a flow as PASS** even if **critical business rules are violated** (for example, a form accepting invalid data). Since we **never truly know how LLMs may interpret each step**, **custom assertions may be needed** (explained in the next section) — to enforce **specific validations** and ensure that your tests **strictly follow business rules**, even when the AI may consider the flow successful.
+
+
+
+
+
+
 ## **Custom Assertions**
-
-
-
 In **MCP Playwright tests**, the overall **PASS/FAIL status is often determined by the underlying LLM (AI agent)** interpreting your test steps.
 
 * This is powerful, but it’s also **hit-or-miss**: the AI may incorrectly mark a step as “PASS” even if a business rule is violated.
@@ -307,7 +393,6 @@ load_dotenv(override=True)
 def flow_runner():
     return BaseFlowRunner()
 
-
 @pytest.mark.parametrize("steps_path", [
     "tests/data/flows/verify_only_digits_allowed.md",
 ])
@@ -322,11 +407,15 @@ def test_generic_phone_number(flow_runner, steps_path: str):
     steps_template = pathlib.Path(steps_path).read_text(encoding="utf-8")
     steps = steps_template.format(username=username, password=password)
 
+    # Define a custom RunResult class to include additional validation results
+    # Add boolean flags for key business rules (e.g., phone_validation_passed)
     class CustomRunResult(RunResult):
         phone_validation_passed: bool = Field(description="True if phone validation message appeared, else False")
 
+    # Run the flow and get results in the custom result class
     result = flow_runner.run_flow(steps, CustomRunResult)
-    print(result)
+
+    print(result) # Print result, if -s flag is enabled
     assert result.status == "PASS", f"Failed: {result.exception} at {result.failed_step_id}"
     assert result.phone_validation_passed, "Phone field accepted non-digit characters, validation failed."
 ```
@@ -361,3 +450,6 @@ FAILED tests/e2e/test_custom_assertions.py::test_generic_phone_number[tests/data
 
 This demonstrates **how custom assertions can catch business rule violations** even when the AI-marked status indicates success.
 
+### Upcoming Sections
+1. Bring your own Tools
+2. Bring your own MCP servers on need basis

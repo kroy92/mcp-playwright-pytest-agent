@@ -16,9 +16,8 @@ def flow_runner():
 
 
 
-
 @pytest.mark.parametrize("steps_path", [
-    "tests/data/flows/verify_only_digits_allowed.md",
+    "tests/data/flows/verify_company_name.md",
 ])
 def test_generic_phone_number(flow_runner, steps_path: str):
     username = os.environ.get("CRM_USERNAME")
@@ -31,14 +30,9 @@ def test_generic_phone_number(flow_runner, steps_path: str):
     steps_template = pathlib.Path(steps_path).read_text(encoding="utf-8")
     steps = steps_template.format(username=username, password=password)
 
-    # Define a custom RunResult class to include additional validation results
-    # Add boolean flags for key business rules (e.g., phone_validation_passed)
-    class CustomRunResult(RunResult):
-        phone_validation_passed: bool = Field(description="True if phone validation message appeared, else False")
-
-    # Run the flow and get results in the custom result class
-    result = flow_runner.run_flow(steps, CustomRunResult)
-
-    print(result) # Print result, if -s flag is enabled
+    result = flow_runner.run_flow(steps, RunResult)
+    print(result)
     assert result.status == "PASS", f"Failed: {result.exception} at {result.failed_step_id}"
-    assert result.phone_validation_passed, "Phone field accepted non-digit characters, validation failed."
+    for step in result.steps:
+        print(step, '\n')  # Print each step result if -s flag is enabled
+        assert step.status == "PASS", f"Step {step.step_id} failed: {step.exception}. Expected: {step.expected_result}, Actual: {step.actual_result}"

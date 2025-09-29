@@ -1,6 +1,6 @@
 from __future__ import annotations
 # Provided by your agents SDK
-from agents import Agent, Runner, trace, OpenAIChatCompletionsModel  # type: ignore[import-not-found]
+from agents import Agent, Runner, trace, OpenAIChatCompletionsModel , OpenAIResponsesModel # type: ignore[import-not-found]
 from agents.model_settings import ModelSettings  # type: ignore[import-not-found]
 from playwright_agent.integrations.azure_openai import make_async_client
 from playwright_agent.settings import Settings
@@ -20,7 +20,7 @@ class AgentRunner:
             agent = Agent(
                 name="mcp_playwright_test_agent",
                 instructions=self.instructions,
-                model=OpenAIChatCompletionsModel(
+                model=OpenAIResponsesModel(
                     openai_client=client,
                     model=self.settings.azure_openai_deployment,
                 ),

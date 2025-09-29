@@ -1,5 +1,5 @@
 
-
+**Note: - Always wait for elements to be visible before interacting, Use reasonable retries up to the default step timeout**
 # **Test Case: Verify that the Phone Field Accepts Only Digits on Create Lead Form**
 
 | Step No | Action                  | Test Data                                                    | Expected Result                                                                               |
