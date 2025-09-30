@@ -27,7 +27,7 @@ class AgentRunner:
                 tools=self.tools,              # extend with more tools if needed
                 mcp_servers=self.mcp_servers,  # [Playwright MCP, Filesystem MCP]
                 output_type=self.output_type,  # pydantic model type (e.g., RunResult)
-                model_settings=ModelSettings(parallel_tool_calls=True)
+                #model_settings=ModelSettings(parallel_tool_calls=True)
             )
             with trace("pytest_web_flow"):
                 result = await Runner.run(agent, input=prompt.strip(), max_turns=self.settings.max_turns)

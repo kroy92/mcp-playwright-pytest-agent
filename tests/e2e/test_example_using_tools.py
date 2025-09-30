@@ -55,7 +55,7 @@ def test_export_accounts(flow_runner, steps_path: str):
 
 
 # skip this test
-@pytest.mark.skip(reason="Skipping test for now")
+#@pytest.mark.skip(reason="Skipping test for now")
 
 @pytest.mark.parametrize("steps_path", [
     "tests/data/flows/d365_lead_opportunity.md",
@@ -65,9 +65,9 @@ def test_create_lead_and_qualify_opportunity(flow_runner, steps_path: str):
     url = os.getenv("DYNAMICS_CRM_URL")
     username = os.getenv("D365_USERNAME")
     password = os.getenv("D365_PASSWORD")
-    lead_name = "WAY I CDP"
-    FIRST_NAME = "Ram"
-    LAST_NAME = "Kumar"
+    lead_name = "Covid Tracker"
+    FIRST_NAME = "Mohit"
+    LAST_NAME = "Raina"
 
     if not url or not username or not password:
         pytest.skip("Environment variables DYNAMICS_CRM_URL, D365_USERNAME or D365_PASSWORD not set")

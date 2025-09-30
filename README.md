@@ -505,7 +505,197 @@ When you decorate a function with `@function_tool`, the Agent SDK does several t
 
 This means that by just using the decorator, your function becomes a fully integrated tool that the agent can **autonomously decide** to call during test execution.
 
+Certainly! Here’s your improved, tutorial-style explanation for “Bring your own MCP server,” now with **key imports included for each code snippet** so readers know exactly where each class or function comes from. This matches your previous sections in tone and clarity.
 
-### Upcoming Sections
 
-2. Bring your own MCP servers on need basis
+## Bring Your Own MCP Server
+
+
+While this framework is primarily designed around Playwright MCP, you can **bring in other MCP servers** to support your tests whenever your scenario requires interaction with external systems (such as Dataverse, Azure DevOps (ADO), JIRA, or custom business process MCPs). This makes your automation extensible and ready for complex, cross-system flows.
+
+
+**For example:**  
+You can use **Dataverse MCP** to quickly create an opportunity record (your test data) right in your enterprise database—Dataverse, in this case—as the first step of your test. This means your test can focus on what really matters: checking the actual business process, like moving through all the BPF stages and closing the opportunity as "Won." You don’t have to waste time on setup or pre-requisite steps. This way, your automation is more reliable, efficient, and truly tests the real user journey—not just the data setup.
+
+
+### Key Concepts
+
+#### 1. **Configuring the External MCP Server**
+
+To connect to an external system, you define the server parameters using `StdioServerParameters`. For example, to launch a Dataverse MCP server:
+
+```python
+# Key import for this snippet:
+from mcp import StdioServerParameters
+
+dataverse_mcp_param = StdioServerParameters(
+    command="Microsoft.PowerPlatform.Dataverse.MCP",
+    args=[
+        f"--ConnectionUrl={connection}",
+        "--MCPServerName=DataverseMCPServer",
+        f"--TenantId={tenant}",
+        "--EnableHttpLogging=true",
+        "--EnableMsalLogging=false",
+        "--Debug=false",
+        "--BackendProtocol=HTTP",
+    ],
+)
+```
+- **Purpose:** This block specifies how to start the Dataverse MCP server, passing all required connection and logging arguments.
+- **Why:** It enables the agent to interact with Dataverse as part of your test flow.
+
+#### 2. **Launching and Using the MCP Server in Your Test**
+
+The test launches the MCP server as a context manager and passes it to the agent runner:
+
+```python
+# Key imports for this snippet:
+from agents.mcp.server import MCPServerStdio, MCPServerStdioParams
+from agents.mcp import create_static_tool_filter
+
+async with MCPServerStdio(
+    params=MCPServerStdioParams(dataverse_mcp_param),
+    client_session_timeout_seconds=120,
+    tool_filter=create_static_tool_filter(allowed_tool_names=["create_record"])
+) as dataverse_mcp:
+    result = await flow_runner._run_agent_flow(
+        steps,
+        RunResult,
+        tools=[get_totp],
+        mcp_servers=[dataverse_mcp],  # Here we use Dataverse MCP
+    )
+```
+- **What’s new:**  
+  - The MCP server is started only for the duration of the test, ensuring clean resource management.
+  - The `tool_filter` restricts the agent to only the tools you want to expose (here, just `create_record`).
+  - The `mcp_servers` argument allows you to pass one or more MCP server instances to the agent, making it possible to orchestrate actions across multiple systems.
+
+#### 3. **Assertions and Step Results**
+
+The rest of the test asserts that the flow and each step passed, as in your previous examples.
+
+
+
+**This pattern—configuring, launching, and passing an external MCP server to your agent—is how you extend your Playwright MCP framework to support any system with an MCP interface.**
+
+This is demonstrated in the file **test_example_with_dataverse_mcp.py**.
+
+
+
+## Full Example: test_example_with_dataverse_mcp.py
+
+
+
+```python
+import os
+import pathlib
+from datetime import date
+
+import pyotp
+import pytest
+from dotenv import load_dotenv
+
+# Key imports for MCP server integration:
+from agents.mcp.server import MCPServerStdio, MCPServerStdioParams
+from agents.mcp import create_static_tool_filter
+from mcp import StdioServerParameters
+
+from agents.tool import function_tool
+from playwright_agent.runtime.base import BaseFlowRunner
+from playwright_agent.schemas.results import RunResult
+
+@function_tool()
+def get_totp() -> str:
+    """Generate a MFA code for Login."""
+    mfa_key = os.getenv("D365_MFA_KEY")
+    if not mfa_key:
+        raise ValueError("MFA key is not configured.")
+    return pyotp.TOTP(mfa_key).now()
+
+@pytest.fixture
+def flow_runner():
+    """Fixture to provide a BaseFlowRunner instance."""
+    return BaseFlowRunner()
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "steps_path",
+    [
+        "tests/data/flows/business_process_flow.md",
+    ],
+)
+async def test_business_process_opportunity(flow_runner, steps_path):
+    """
+    Tests User is able to navigate all BPF stages of an opportunity.
+    """
+    load_dotenv(override=True)
+
+    url = os.getenv("DYNAMICS_CRM_URL")
+    username = os.getenv("D365_USERNAME")
+    password = os.getenv("D365_PASSWORD")
+    connection = os.getenv("DATAVERSE_CONNECTION_URL")
+    tenant = os.getenv("DATAVERSE_TENANT_ID")
+
+    if not all([url, username, password, connection, tenant]):
+        pytest.skip("Required environment variables for D365/Dataverse are not set.")
+
+    opp_name = "OCR extraction of Polling Booth records for ECI India"
+    today_str = str(date.today())
+
+    steps_template = pathlib.Path(steps_path).read_text(encoding="utf-8")
+    steps = steps_template.format(
+        url=url,
+        username=username,
+        password=password,
+        OpportunityName=opp_name,
+        today=today_str,
+    )
+
+    dataverse_mcp_param = StdioServerParameters(
+        command="Microsoft.PowerPlatform.Dataverse.MCP",
+        args=[
+            f"--ConnectionUrl={connection}",
+            "--MCPServerName=DataverseMCPServer",
+            f"--TenantId={tenant}",
+            "--EnableHttpLogging=true",
+            "--EnableMsalLogging=false",
+            "--Debug=false",
+            "--BackendProtocol=HTTP",
+        ],
+    )
+
+    async with MCPServerStdio(
+        params=MCPServerStdioParams(dataverse_mcp_param),
+        client_session_timeout_seconds=120,
+        tool_filter=create_static_tool_filter(allowed_tool_names=["create_record"])
+    ) as dataverse_mcp:
+        result = await flow_runner._run_agent_flow(
+            steps,
+            RunResult,
+            tools=[get_totp],
+            mcp_servers=[dataverse_mcp],
+        )
+
+    assert result.status == "PASS", f"Flow failed: {result.exception} at {result.failed_step_id}"
+    for step in result.steps:
+        print(step, '\n')
+        assert (
+            step.status == "PASS"
+        ), f"Step {step.step_id} failed: {step.exception}. Expected: {step.expected_result}, Actual: {step.actual_result}"
+```
+
+This behavior can be demonstrated by running:
+   ```bash
+   uv run pytest -s .tests\e2e\test_example_with_dataverse_mcp.py
+   ```
+   - The `-s` flag will print step-by-step results to the console.
+
+
+
+**Tip:**  
+For a detailed HTML report of your test results, run your tests with this flag:
+```bash
+uv run pytest --html=reports/test_example.html .tests\e2e\
+```
+This will generate a user-friendly report you can easily review and share.
+

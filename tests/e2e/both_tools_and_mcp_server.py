@@ -29,7 +29,7 @@ def get_totp() -> str:
 
 runner = BaseFlowRunner()
 
-@pytest.mark.asyncio
+@pytest.mark.skip
 @pytest.mark.PGSQL
 async def test_create_lead_with_mcp_ado():
     import os

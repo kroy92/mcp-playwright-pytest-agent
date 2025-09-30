@@ -22,8 +22,8 @@ class BaseFlowRunner:
 
     async def _run_agent_flow(self, user_steps: str, output_schema, tools:list =None , mcp_servers: list = None) -> dict:
         async with await self.server_manager.get_browser_server() as browser:
-            async with await self.server_manager.get_file_server() as files:
-                default_mcp_servers = [browser, files]
+            #async with await self.server_manager.get_file_server() as files:
+                default_mcp_servers = [browser] #, files]
                 default_tools = []
 
                 consolidate_mcps = (mcp_servers or []) + default_mcp_servers
