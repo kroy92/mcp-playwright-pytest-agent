@@ -1,37 +1,40 @@
-# mcp-playwright-pytest-agent- [mcp-playwright-pytest-agent](#mcp-playwright-pytest-agent)
-- [mcp-playwright-pytest-agent- mcp-playwright-pytest-agent](#mcp-playwright-pytest-agent--mcp-playwright-pytest-agent)
-  - [Why This Project?](#why-this-project)
-  - [Key Features](#key-features)
-  - [Challenges \& Learning Goals](#challenges--learning-goals)
-  - [**Getting Started**](#getting-started)
-    - [1. Install Python, uv and Node.js](#1-install-python-uv-and-nodejs)
-    - [2. Clone the Repository](#2-clone-the-repository)
-    - [3. Copy the Sample .env File](#3-copy-the-sample-env-file)
-    - [4. Fill in the Details in `.env` File](#4-fill-in-the-details-in-env-file)
-    - [5. Run Your First Test](#5-run-your-first-test)
-  - [**Basics**](#basics)
-    - [1. Imports](#1-imports)
-    - [2. Create the Runner](#2-create-the-runner)
-    - [3. Define the Test Function](#3-define-the-test-function)
-    - [4. Write the Steps](#4-write-the-steps)
-    - [5. Run the Steps](#5-run-the-steps)
-    - [6. Print the Result](#6-print-the-result)
-    - [7. Assert the Test Passed](#7-assert-the-test-passed)
-  - [**Data-Driven Test: Running Multiple Flows from Files**](#data-driven-test-running-multiple-flows-from-files)
-    - [Improving Reusability with Fixtures](#improving-reusability-with-fixtures)
-      - [**Example with Fixture**](#example-with-fixture)
-  - [**Default Assertions**](#default-assertions)
-    - [Example](#example)
-    - [What’s Happening Here](#whats-happening-here)
-  - [**Custom Assertions**](#custom-assertions)
-    - [Solution: Custom Assertions](#solution-custom-assertions)
-  - [**Bring Your Own Tools**](#bring-your-own-tools)
-  - [**Bring Your Own MCP Server**](#bring-your-own-mcp-server)
-    - [Key Concepts](#key-concepts)
-      - [1. **Configuring the External MCP Server**](#1-configuring-the-external-mcp-server)
-      - [2. **Launching and Using the MCP Server in Your Test**](#2-launching-and-using-the-mcp-server-in-your-test)
-      - [3. **Assertions and Step Results**](#3-assertions-and-step-results)
+## **Table Of Contents**
+- [**Table Of Contents**](#table-of-contents)
+- [**mcp-playwright-pytest-agent**](#mcp-playwright-pytest-agent)
+- [Why This Project?](#why-this-project)
+- [Key Features](#key-features)
+- [Challenges \& Learning Goals](#challenges--learning-goals)
+- [**Getting Started**](#getting-started)
+  - [1. Install Python, uv and Node.js](#1-install-python-uv-and-nodejs)
+  - [2. Clone the Repository](#2-clone-the-repository)
+  - [3. Copy the Sample .env File](#3-copy-the-sample-env-file)
+  - [4. Fill in the Details in `.env` File](#4-fill-in-the-details-in-env-file)
+  - [5. Run Your First Test](#5-run-your-first-test)
+- [**Basics**](#basics)
+  - [1. Imports](#1-imports)
+  - [2. Create the Runner](#2-create-the-runner)
+  - [3. Define the Test Function](#3-define-the-test-function)
+  - [4. Write the Steps](#4-write-the-steps)
+  - [5. Run the Steps](#5-run-the-steps)
+  - [6. Print the Result](#6-print-the-result)
+  - [7. Assert the Test Passed](#7-assert-the-test-passed)
+- [**Data-Driven Test: Running Multiple Flows from Files**](#data-driven-test-running-multiple-flows-from-files)
+  - [Improving Reusability with Fixtures](#improving-reusability-with-fixtures)
+    - [**Example with Fixture**](#example-with-fixture)
+- [**Default Assertions**](#default-assertions)
+  - [Example](#example)
+  - [What’s Happening Here](#whats-happening-here)
+- [**Custom Assertions**](#custom-assertions)
+  - [Solution: Custom Assertions](#solution-custom-assertions)
+- [**Bring Your Own Tools**](#bring-your-own-tools)
+- [**Bring Your Own MCP Server**](#bring-your-own-mcp-server)
+  - [Key Concepts](#key-concepts)
+    - [1. **Configuring the External MCP Server**](#1-configuring-the-external-mcp-server)
+    - [2. **Launching and Using the MCP Server in Your Test**](#2-launching-and-using-the-mcp-server-in-your-test)
+    - [3. **Assertions and Step Results**](#3-assertions-and-step-results)
   - [Full Example: test\_example\_with\_dataverse\_mcp.py](#full-example-test_example_with_dataverse_mcppy)
+
+## **mcp-playwright-pytest-agent**
 
 
 **mcp-playwright-pytest-agent** is an experimental project that combines **Playwright** for browser automation, **Pytest** for structured testing, and the **Model Context Protocol (MCP)** for context-aware orchestration. It’s designed for developers who want to explore **next-gen automation** while learning and having fun.
@@ -609,7 +612,7 @@ This is demonstrated in the file **test_example_with_dataverse_mcp.py**.
 
 
 
-## Full Example: test_example_with_dataverse_mcp.py
+### Full Example: test_example_with_dataverse_mcp.py
 
 
 
