@@ -505,9 +505,6 @@ When you decorate a function with `@function_tool`, the Agent SDK does several t
 
 This means that by just using the decorator, your function becomes a fully integrated tool that the agent can **autonomously decide** to call during test execution.
 
-Certainly! Here’s your improved, tutorial-style explanation for “Bring your own MCP server,” now with **key imports included for each code snippet** so readers know exactly where each class or function comes from. This matches your previous sections in tone and clarity.
-
-
 ## Bring Your Own MCP Server
 
 
