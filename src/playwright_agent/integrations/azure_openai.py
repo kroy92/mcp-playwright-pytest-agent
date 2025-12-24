@@ -7,4 +7,9 @@ def make_async_client(settings: Settings) -> AsyncAzureOpenAI:
         api_version=settings.azure_openai_api_version,
         azure_endpoint=settings.azure_openai_endpoint,
         api_key=settings.azure_openai_api_key,
+
+        
     )
+
+
+

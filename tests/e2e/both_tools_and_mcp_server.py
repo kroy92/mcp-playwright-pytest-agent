@@ -11,103 +11,81 @@ from agents.mcp.server import MCPServerStdio,MCPServerStdioParams
 import asyncio
 
 
+
+
 ado_mcp_params=MCPServerStdioParams(
     command="npx",
     args=["-y", "@azure-devops/mcp", "krishnaroy"],
+ 
 )
 
+@pytest.fixture
+def flow_runner():
+    return BaseFlowRunner()
 
 
-@function_tool()
-def get_totp() -> str:
-    """Generate a MFA code for Login."""
-    mfa_key = getattr(get_settings(), "mfa_key", None)  # Not required by default
-    if not mfa_key:
-        raise ValueError("MFA key is not configured.")
-    return pyotp.TOTP(mfa_key).now()
-
-
-runner = BaseFlowRunner()
-
-@pytest.mark.skip
-@pytest.mark.PGSQL
-async def test_create_lead_with_mcp_ado():
+@pytest.mark.asyncio
+async def test_using_mcp_ado(flow_runner, trace_name):
     import os
     from dotenv import load_dotenv
     load_dotenv(override=True)
+    url = os.environ.get("D365_FO_URL")
+    username = os.environ.get("D365_FO_USERNAME")
+    password = os.environ.get("D365_FO_PASSWORD")
 
-    url = os.getenv("DYNAMICS_CRM_URL")
-    username = os.getenv("D365_USERNAME")
-    password = os.getenv("D365_PASSWORD")
-    lead_name = "MCP Started -1"
-    FIRST_NAME = "MCP"
-    LAST_NAME = "MCP Started"
+    if not username or not password or not url:
+        pytest.skip("Environment variables D365_FO_USERNAME or D365_FO_PASSWORD or D365_FO_URL not set")
+
     user_step = f"""
-    
-    Execute the following tests  and Report results as PASS/FAIL with details.
-    
-    ** Last time you stopped and didnt complete the test. Please complete it now unless there is a Failure. **
+Fetch the Test Case from Azure DevOps with ID "219" for project 'learn'.
+Execute each step in the test case and capture the results.
 
-    NOTE: DEFAULT STEP TIMEOUT : 30 SECONDS> Please try till 30 seconds for each step before failing.
-    NOTE: If any unexpected popups appear, close them and continue.
-    ** TRY SELF HEALING IF ELEMENTS NOT FOUND **
-    1. Go to Dynamics URL {url}/main.aspx?appid=48a98975-d490-f011-b4cc-000d3a3b863b
-2. Type "{username}" into Username → Password field should appear
-3. Type "{password}" into Password → Main page or MFA prompt should load
-4. If MFA appears, enter code → Next page should load
-5. If "Stay signed in?" prompt appears, click "No" → Main page should load
-6. Wait until logged in → Main page should show - This may take up to 60 seconds
-7. Close any popups that appear → No popups should remain
-8. then click "Read Only Grid" → Read-only grid should activate
-9. If Copilot tab is open, close it → Copilot tab should disappear
-10. Click "New Lead" → Lead form should open
-11. Enter "{lead_name}" in Topic → Field should accept
-12. Enter "{FIRST_NAME}" in First Name → Field should accept
-13. Click Accept Suggestion if it appears → Suggestion should be accepted (if appeared)
-14. Enter "{LAST_NAME}" in Last Name → Field should accept
-15. Save Lead → Lead should be saved. There should be no error notifications/warnings/messages. **FAIL** if any appear. **FAIL** if lead is not Saved
-16. Capture Lead Name from header → It should match "{FIRST_NAME} {LAST_NAME}"
-17. Click "Qualify Command"
-    - Last Time You clicked Qualify Button on Business Process Flow. Dont do that. Click on Command Bar Button. check role=menuitem title=Qualify
-18. Verify → Qualify dialog box should appear (fail if Duplicate dialog appears)
-19. In dialog, click "Qualify" → Finish button should appear
-20. Click "Finish" → Opportunity page should load
-21. Close Browser → No browser left running
+**Login Details (for execution only):**
+    URL: {url}
+    Username: {username}
+    Password: {password}
 
+**IMPORTANT SECURITY NOTE:**
+- Do NOT include actual credentials (username, password, MFA codes) in any bug description, logs, screenshots, or comments.
+- Use placeholders like {{username}}, {{password}} in all documentation.
 
-* Bug Creation Logic for Test Failures if the test Failed **
-- Only create one consolidated work item of type bug in Project learn for all failures in this test run.
-- Create Bug **only if a similar bug does not already exist**. Check for existing bugs using similar titles or descriptions to avoid duplication.
-- If a new bug is created:
-  - Provide **clear and detailed steps to reproduce** in the bug description.
-  - **Attach screenshots** or relevant artifacts if available.
-- Use your **best judgment** and  assign appropriate **severity and priority**.
-- Return the **Bug ID** in the **exception message** for traceability.
+If any step fails:
+    - Create a new Work Item of type "Bug" in Azure DevOps.
+    - Populate the "Microsoft.VSTS.TCM.ReproSteps" field with detailed reproduction steps in beautiful markdown format in tabular form
+     -**When using a table, insert  line breaks after each row to ensure proper formatting**.
+    - Link the bug to the original test case.
+    - Assign the bug to the original test case owner.
+    - Set the bug's severity and priority as per your judgment.
+    - Ensure NO sensitive information (credentials, tokens, URLs with secrets) is included in the bug.
+    - ** Verify the Reproduction Steps field renders correctly in Azure DevOps before saving the bug. **
+
+Additional Guidelines:
+- Apply reasonable retries for transient issues (e.g., network delays, UI load).
+- Think like a smart manual tester: validate UI states, handle unexpected popups, and confirm expected results.
+- Capture clear evidence (screenshots, logs) without exposing sensitive data.
+
+Close Bugs:
+- If test case passes and a related bugs exists, close the bug with a comment referencing the successful test run.
 
 """
 
-    class CustomAssertions(RunResult):
-        # check if duplicate Account or Contact dialog appeared in step 17
-        is_duplicate_dialog_appeared: bool = Field(..., description="Success conditions : Whether Duplicate Account or Contact dialog appeared in step 17")
-        is_Qualify_button_clicked: bool = Field(..., description="Success conditions : Whether Qualify button was clicked successfully in step 19. FAIL if not clicked")
 
-        is_opportunity_page_created_and_loaded: bool = Field(...,description="Success conditions : Whether the New Opportunity was created and Opportunity Page loaded successfully")
-        is_step_21_successful: bool = Field(..., description="Success conditions : Whether Step 21 was successful")
-        opp_id_created: str = Field(..., description="The Opportunity GUID , NOT LEAD GUID created if Test is Passed, else set value to 'TEST FAILED'")
-        is_lead_converted_to_opportunity: bool = Field(...,description="Success conditions: Whether the Lead was converted to Opportunity successfully. FAIL IF NOT CONVERTED")
+    class CustomRunResult(RunResult):
+        journal_number: str | None = Field(description="The created journal number in step 5, if not created and error occurred, this will be None")
 
     async with MCPServerStdio(params=ado_mcp_params, client_session_timeout_seconds=30) as ado_tools:
-        result = await runner._run_agent_flow(
+        result = await flow_runner._run_agent_flow(
             user_step,
-            CustomAssertions,
-            tools=[get_totp],
-            mcp_servers=[ado_tools]
+            CustomRunResult,
+            mcp_servers=[ado_tools],
+            trace_name=trace_name,
         )
 
     print(result)
-    assert result.status == "PASS", f"Test failed with exception: {result.exception} at step {result.failed_step_id}"
-    assert result.is_opportunity_page_created_and_loaded, "Opportunity page was not created and loaded successfully"
-    assert result.is_step_21_successful, "Step 21 was not successful"
+    assert result.status == "PASS", f"Failed: {result.exception} at {result.failed_step_id}"
+    for step in result.steps:
+        print(step, '\n')  # Print each step result if -s flag is enabled
+        assert step.status == "PASS", f"Step {step.step_id} failed: {step.exception}. Expected: {step.expected_result}, Actual: {step.actual_result}"
 
 
 

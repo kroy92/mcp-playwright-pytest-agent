@@ -729,3 +729,86 @@ uv run pytest --html=reports/test_example.html .tests\e2e\
 ```
 This will generate a user-friendly report you can easily review and share.
 
+
+## **Tracing with OpenAI Agent SDK**
+
+The framework integrates with the **OpenAI Agent SDK's tracing feature**, which helps you monitor, debug, and analyze your test runs in the OpenAI trace dashboard.
+
+### What is Tracing?
+
+When your tests run, each execution is recorded as a **trace** in OpenAI's system. This includes:
+- All tool calls made by the agent
+- Reasoning steps and decisions
+- Token usage and timing
+- Success/failure outcomes
+
+### Setting the Trace Name
+
+You can control how your test runs appear in the trace dashboard using the `trace_name` parameter.
+
+#### Option 1: Default Trace Name
+
+When you don't provide a `trace_name`, the framework uses `"web_flow"` as the default:
+
+```python
+def test_login():
+    result = runner.run_flow(steps, RunResult)
+    # Trace name: "web_flow"
+```
+
+#### Option 2: Explicit Trace Name
+
+Pass a custom `trace_name` for specific test case identifiers:
+
+```python
+def test_login():
+    result = runner.run_flow(
+        steps, 
+        RunResult, 
+        trace_name="TC_LOGIN_001"  # Custom trace name
+    )
+    # Trace name: "TC_LOGIN_001"
+```
+
+This is useful when you want to:
+- Use Jira ticket IDs as trace names
+- Follow a specific naming convention
+- Correlate traces with external test management systems
+
+#### Option 3: Using the `trace_name` Fixture (Recommended)
+
+The framework provides a `trace_name` fixture that automatically uses the test function name:
+
+```python
+def test_login_with_valid_credentials(flow_runner, trace_name):
+    result = flow_runner.run_flow(
+        steps, 
+        RunResult, 
+        trace_name=trace_name
+    )
+    # Trace name: "test_login_with_valid_credentials"
+```
+
+The fixture is defined in `conftest.py`:
+
+```python
+@pytest.fixture
+def trace_name(request) -> str:
+    """Returns the current test name for tracing."""
+    return request.node.name
+```
+
+### Which Approach to Use?
+
+| Approach | Trace Name | Best For |
+|----------|------------|----------|
+| Default | `"web_flow"` | Quick tests, prototyping |
+| Explicit | Your custom string | Test case IDs, Jira links |
+| Fixture | Test function name | Production test suites |
+
+**Recommendation:** For production test suites, use the **fixture approach**. It provides automatic, consistent naming without manual effort.
+
+### Example Test File
+
+See `tests/e2e/test_trace_name_examples.py` for a complete tutorial with all three approaches demonstrated.
+

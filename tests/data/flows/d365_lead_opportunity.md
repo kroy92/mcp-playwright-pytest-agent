@@ -20,6 +20,7 @@ NOTE: If any unexpected popups appear, close them and continue.
 | 8           | Enter topic name, first name, and last name in the lead creation form         | `{lead_name}`, `{FIRST_NAME}`, `{LAST_NAME}` | Fields should accept and display entered values                                     |
 | 9           | Click **Save** image                                                          | N/A                                 | Lead should be saved successfully                                                   |
 | 10          | Verify Lead’s Name in header                                                  | `{FIRST_NAME} {LAST_NAME}`          | Header should match entered name                                                    |
-| 11          | Click **Phone** image under Lead Commands, wait, then click on **Qualify** button on dialog | N/A                                 | **Finish** button should appear on dialog; no duplicate dialogs should appear       |
-| 12          | Click **Finish** button                                                       | N/A                                 | **Opportunity** page should be displayed                                            |
-| 13          | Close the browser                                                             | N/A                                 | Browser should be closed, no instance running                                       |
+| 11          | Click **Phone** image under Lead Commands,  | N/A                                 | A **Qualify Lead** dialog should appear; no Duplicate dialogs should appear       
+|12 |Click **Qualify** button on  **Qualify Lead** dialog    | N/A | **Finish** button should appear
+| 13          | Click **Finish** button                                                       | N/A                                 | **Opportunity** page should be displayed                                            |
+| 14          | Close the browser                                                             | N/A                                 | Browser should be closed, no instance running                                       |

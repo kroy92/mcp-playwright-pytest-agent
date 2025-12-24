@@ -17,3 +17,8 @@ if platform.system() == "Windows":
 def flow_runner() -> BaseFlowRunner:
     """Session-scoped runner."""
     return BaseFlowRunner()
+
+@pytest.fixture
+def trace_name(request) -> str:
+    """Returns the current test name for tracing."""
+    return request.node.name
