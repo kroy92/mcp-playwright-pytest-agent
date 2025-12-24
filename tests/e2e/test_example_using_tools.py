@@ -25,12 +25,11 @@ def flow_runner():
     return BaseFlowRunner()
 
 
-
-#@pytest.mark.skip(reason="Skipping test for now")   
+@pytest.mark.asyncio
 @pytest.mark.parametrize("steps_path", [
     "tests/data/flows/export_accounts.md",
 ])
-def test_export_accounts(flow_runner, steps_path: str):
+async def test_export_accounts(flow_runner, steps_path: str):
  
     url = os.getenv("DYNAMICS_CRM_URL")
     username = os.getenv("D365_USERNAME")
@@ -44,7 +43,7 @@ def test_export_accounts(flow_runner, steps_path: str):
     steps = steps_template.format(url=url, username=username, password=password)
 
     # Provide the custom tool to the flow runner in parameter `tools`
-    result = flow_runner.run_flow(steps, RunResult, tools=[get_totp])
+    result = await flow_runner.run(steps, RunResult, tools=[get_totp])
     print(result)
     
     assert result.status == "PASS", f"Failed: {result.exception} at {result.failed_step_id}"
@@ -57,10 +56,11 @@ def test_export_accounts(flow_runner, steps_path: str):
 # skip this test
 #@pytest.mark.skip(reason="Skipping test for now")
 
+@pytest.mark.asyncio
 @pytest.mark.parametrize("steps_path", [
     "tests/data/flows/with_hints.md",
 ])
-def test_create_lead_and_qualify_opportunity(flow_runner, steps_path: str):
+async def test_create_lead_and_qualify_opportunity(flow_runner, steps_path: str):
  
     url = os.getenv("DYNAMICS_CRM_URL")
     username = os.getenv("D365_USERNAME")
@@ -82,7 +82,7 @@ def test_create_lead_and_qualify_opportunity(flow_runner, steps_path: str):
         duplicate_dialog_shown: bool = Field(description="True if duplicate account/contact dialog appeared")
         opportunity_page_loaded: bool = Field(description="True if opportunity page was displayed after qualify")
 
-    result = flow_runner.run_flow(steps, CustomRunResult, tools=[get_totp])
+    result = await flow_runner.run(steps, CustomRunResult, tools=[get_totp])
     print(result)
     assert result.status == "PASS", f"Failed: {result.exception} at {result.failed_step_id}"
     assert result.login_successful, "Login to Dynamics CRM was not successful"

@@ -14,13 +14,17 @@ The main entry point for pytest tests. It handles all the complexity
 of setting up MCP servers, configuring the AI agent, and executing
 natural language test steps.
 
+**All tests must be async.** Use `@pytest.mark.asyncio` decorator.
+
 Usage
 -----
 Basic usage in a pytest test:
 
+    import pytest
     from playwright_agent import BaseFlowRunner, RunResult
     
-    def test_login():
+    @pytest.mark.asyncio
+    async def test_login():
         runner = BaseFlowRunner()
         steps = '''
         Open https://example.com/login
@@ -29,7 +33,7 @@ Basic usage in a pytest test:
         Click Login button
         Verify Dashboard page appears
         '''
-        result = runner.run_flow(steps, RunResult)
+        result = await runner.run(steps, RunResult)
         assert result.status == "PASS"
 
 With custom tools:
@@ -41,11 +45,11 @@ With custom tools:
         '''Generate MFA code.'''
         return "123456"
     
-    result = runner.run_flow(steps, RunResult, tools=[get_mfa_code])
+    result = await runner.run(steps, RunResult, tools=[get_mfa_code])
 
 With tracing for debugging:
 
-    result = runner.run_flow(
+    result = await runner.run(
         steps, 
         RunResult, 
         trace_name="TC_LOGIN_001"  # Shows in OpenAI trace dashboard
@@ -107,9 +111,9 @@ class BaseFlowRunner:
         instructions: System prompt loaded from instructions file
     
     Example:
-        # Basic usage
+        # Basic usage (async required)
         runner = BaseFlowRunner()
-        result = runner.run_flow("Open google.com", RunResult)
+        result = await runner.run("Open google.com", RunResult)
         
         # With custom instructions
         runner = BaseFlowRunner(instructions_path=Path("my_instructions.md"))
@@ -119,8 +123,9 @@ class BaseFlowRunner:
         def flow_runner():
             return BaseFlowRunner()
         
-        def test_example(flow_runner):
-            result = flow_runner.run_flow(steps, RunResult)
+        @pytest.mark.asyncio
+        async def test_example(flow_runner):
+            result = await flow_runner.run(steps, RunResult)
     """
 
     def __init__(self, instructions_path: Path | None = None):
@@ -145,7 +150,7 @@ class BaseFlowRunner:
             logger.error(f"Failed to initialize BaseFlowRunner: {e}")
             raise
 
-    async def _run_agent_flow(
+    async def run(
         self, 
         user_steps: str, 
         output_schema, 
@@ -154,22 +159,38 @@ class BaseFlowRunner:
         trace_name: str = "web_flow",
     ) -> Any:
         """
-        Execute an agent flow with the given steps.
+        Execute a web automation flow with natural language steps.
+        
+        This is the main entry point for running AI-powered browser tests.
+        It starts an MCP Playwright server, configures the AI agent, and
+        executes the provided steps.
         
         Args:
-            user_steps: Natural language test steps
-            output_schema: Pydantic model for structured output
-            tools: Optional list of additional tools
+            user_steps: Natural language test steps describing what to do
+            output_schema: Pydantic model class for structured output (e.g., RunResult)
+            tools: Optional list of custom tools (@function_tool decorated functions)
             mcp_servers: Optional list of additional MCP servers
-            trace_name: Optional trace name for observability (defaults to caller's function name)
+            trace_name: Name for this run in OpenAI trace dashboard (default: "web_flow")
             
         Returns:
-            Typed result matching output_schema
+            Instance of output_schema with test results
             
         Raises:
             FlowExecutionError: If the flow execution fails
             MCPServerError: If MCP server fails to start
             MCPToolError: If an MCP tool call fails
+            
+        Example:
+            runner = BaseFlowRunner()
+            result = await runner.run(
+                \"\"\"
+                Open https://example.com
+                Click the Login button
+                \"\"\",
+                RunResult,
+                trace_name="test_login"
+            )
+            assert result.status == "PASS"
         """
         logger.info("Starting agent flow execution")
         browser = None
@@ -214,53 +235,44 @@ class BaseFlowRunner:
                 cause=e
             ) from e
 
-    def run_flow(
-        self, 
-        user_steps: str, 
-        output_schema, 
-        tools: list | None = None, 
-        mcp_servers: list | None = None,
-        trace_name: str | None = None,
-    ) -> Any:
-        """
-        Run a flow from a string of steps (pytest/CLI-friendly synchronous wrapper).
-        
-        Args:
-            user_steps: Natural language test steps
-            output_schema: Pydantic model for structured output
-            tools: Optional list of additional tools
-            mcp_servers: Optional list of additional MCP servers
-            
-        Returns:
-            Typed result matching output_schema
-        """
-        return asyncio.run(self._run_agent_flow(user_steps, output_schema, tools, mcp_servers, trace_name or "web_flow"))
-
-    def run_flow_from_file(
+    async def run_from_file(
         self, 
         file_path: str, 
         output_schema, 
         tools: list | None = None, 
-        mcp_servers: list | None = None
+        mcp_servers: list | None = None,
+        trace_name: str = "web_flow",
     ) -> Any:
         """
-        Run a flow from a file path.
+        Execute a web automation flow from a markdown file.
+        
+        Reads test steps from a file and executes them. Useful for
+        data-driven testing with steps stored in separate files.
         
         Args:
-            file_path: Path to file containing test steps
-            output_schema: Pydantic model for structured output
-            tools: Optional list of additional tools
+            file_path: Path to file containing test steps (e.g., .md file)
+            output_schema: Pydantic model class for structured output
+            tools: Optional list of custom tools
             mcp_servers: Optional list of additional MCP servers
+            trace_name: Name for this run in OpenAI trace dashboard
             
         Returns:
-            Typed result matching output_schema
+            Instance of output_schema with test results
             
         Raises:
             FileNotFoundError: If steps file doesn't exist
+            FlowExecutionError: If the flow execution fails
+            
+        Example:
+            result = await runner.run_from_file(
+                "tests/flows/login.md",
+                RunResult,
+                trace_name="test_login"
+            )
         """
         steps_path = Path(file_path)
         if not steps_path.exists():
             raise FileNotFoundError(f"Steps file not found: {file_path}")
             
         steps = steps_path.read_text(encoding="utf-8")
-        return self.run_flow(steps, output_schema, tools, mcp_servers)
+        return await self.run(steps, output_schema, tools, mcp_servers, trace_name)

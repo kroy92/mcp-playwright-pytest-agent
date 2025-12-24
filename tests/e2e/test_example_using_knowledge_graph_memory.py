@@ -56,7 +56,7 @@ async def test_create_lead_and_qualify_opportunity(flow_runner, steps_path: str)
         opportunity_page_loaded: bool = Field(description="True if opportunity page was displayed after qualify")
 
     async with await flow_runner.server_manager.get_knowledge_graph_based_memory(kg_path='Leads_opportunities.json') as kg_server:
-        result = await flow_runner._run_agent_flow(steps, CustomRunResult, tools=[get_totp], mcp_servers=[kg_server])
+        result = await flow_runner.run(steps, CustomRunResult, tools=[get_totp], mcp_servers=[kg_server])
 
     print(result)
     assert result.status == "PASS", f"Failed: {result.exception} at {result.failed_step_id}"

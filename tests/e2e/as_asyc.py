@@ -6,11 +6,12 @@ from playwright_agent.schemas.results import RunResult
 from playwright_agent.runtime.base import BaseFlowRunner
 from pydantic import Field
 
-# Initialize the runner (assuming it's synchronous to create)
+# Initialize the runner
 runner = BaseFlowRunner()
 
-# Use pytest-asyncio marker
+# Use pytest-asyncio marker for all tests in this module
 pytestmark = pytest.mark.asyncio
+
 
 @pytest.mark.e2e
 @pytest.mark.parametrize("steps_path", [
@@ -19,7 +20,7 @@ pytestmark = pytest.mark.asyncio
 ])
 async def test_generic_web_flows(steps_path: str):
     steps = pathlib.Path(steps_path).read_text(encoding="utf-8")
-    result = await runner.run_flow(steps, RunResult)  # Await the async call
+    result = await runner.run(steps, RunResult)
     print(result)
     assert result.status == "PASS", f"Failed: {result.exception} at {result.failed_step_id}"
     assert result.proof_of_pass, "Missing proof_of_pass (screenshot path)"
@@ -68,7 +69,7 @@ async def test_create_lead_with_mcp():
                                                              description="Whether the New Opportunity was created and Opportunity Page loaded successfully")
         is_step_18_successful: bool = Field(..., description="Whether Step 18 was successful")
 
-    result = await runner.run_flow(user_step, CustomAssertions)
+    result = await runner.run(user_step, CustomAssertions)
     print(result)
     assert result.status == "PASS", f"Test failed with exception: {result.exception} at step {result.failed_step_id}"
     assert result.is_opportunity_page_created_and_loaded, "Opportunity page was not created and loaded successfully"
@@ -122,7 +123,7 @@ async def test_create_lead_with_mcp1():
                                                              description="Success conditions : Whether the New Opportunity was created and Opportunity Page loaded successfully")
         is_step_18_successful: bool = Field(..., description="Success conditions : Whether Step 18 was successful")
 
-    result = await runner.run_flow(user_step, CustomAssertions)
+    result = await runner.run(user_step, CustomAssertions)
     print(result)
     assert result.status == "PASS", f"Test failed with exception: {result.exception} at step {result.failed_step_id}"
     assert result.is_opportunity_page_created_and_loaded, "Opportunity page was not created and loaded successfully"

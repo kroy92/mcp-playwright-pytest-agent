@@ -35,9 +35,9 @@ becomes the tool description that the AI uses to decide when to call it.
 
 Using Tools in Tests
 --------------------
-Pass tools to `run_flow()` to make them available to the agent:
+Pass tools to `run()` to make them available to the agent:
 
-    result = runner.run_flow(
+    result = await runner.run(
         steps,
         RunResult,
         tools=[get_totp, get_test_data]  # Agent can call these

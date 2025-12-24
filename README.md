@@ -59,6 +59,7 @@ This project tries to leverage Playwright MCP to create **context-driven automat
 - ✅ **Bring Your Own Tools** – Plug in custom Python functions   
 - ✅ **Bring Your Own MCP Servers** – Connect to external MCP-based services for extended capabilities  
 - ✅ **Modular Design** – Flexible architecture for experimentation  
+- ✅ **Async-First API** – All tests run asynchronously with `pytest-asyncio` for optimal performance
 
 
 ## Challenges & Learning Goals
@@ -121,18 +122,22 @@ uv run pytest -s .\tests\e2e\test_first_examples.py
 
 Here’s a simple, step-by-step explanation of your First test in plain words:
 
+> **Note:** All tests use an **async-only API**. You must use `@pytest.mark.asyncio` decorator and `async def` for test functions, then `await` the `runner.run()` call.
+
 
 
 ### 1. Imports
 
 ```python
 from __future__ import annotations
+import pytest
 from playwright_agent.runtime.base import BaseFlowRunner
 from playwright_agent.schemas.results import RunResult
 ```
 
-* `BaseFlowRunner`: The main engine that **runs your test steps**.
+* `BaseFlowRunner`: The main engine that **runs your test steps asynchronously**.
 * `RunResult`: A structure to hold the **outcome of the test** (pass/fail, exceptions, etc.).
+* `pytest`: Required for the `@pytest.mark.asyncio` decorator.
 * `__future__ import annotations`: Helps with **type hinting**, nothing to worry about for basic usage.
 
 
@@ -150,10 +155,12 @@ runner = BaseFlowRunner()
 ### 3. Define the Test Function
 
 ```python
-def test_google_search_inline():
+@pytest.mark.asyncio
+async def test_google_search_inline():
 ```
 
-* `test_google_search_inline` is a **test case**.
+* `test_google_search_inline` is an **async test case**.
+* The `@pytest.mark.asyncio` decorator tells pytest-asyncio to run this as an async test.
 * Pytest will automatically detect and run any function starting with `test_`.
 
 
@@ -179,10 +186,11 @@ Wait for the message "You logged into a secure area!" to appear
 ### 5. Run the Steps
 
 ```python
-result = runner.run_flow(steps, RunResult)
+result = await runner.run(steps, RunResult)
 ```
 
-* The `run_flow` method **executes the steps**.
+* The `run()` method **executes the steps asynchronously**.
+* You must `await` the call since all test execution is async.
 * It returns a `RunResult` object containing:
 
   * `status`: Did the test **pass** or **fail**?
@@ -217,13 +225,14 @@ assert result.status == "PASS", f"Failed: {result.exception} at {result.failed_s
 We can also **run the same test logic with different flow files** by using **Pytest’s `@pytest.mark.parametrize`** feature.
 
 ```python
+@pytest.mark.asyncio
 @pytest.mark.parametrize("steps_path", [
     "tests/data/flows/failed_login.md",
     "tests/data/flows/demo_login.md",
 ])
-def test_generic_web_flows(steps_path: str):
+async def test_generic_web_flows(steps_path: str):
     steps = pathlib.Path(steps_path).read_text(encoding="utf-8")
-    result = runner.run_flow(steps, RunResult)
+    result = await runner.run(steps, RunResult)
     print(result)
     assert result.status == "PASS", f"Failed: {result.exception} at {result.failed_step_id}"
     assert result.proof_of_pass, "Missing proof_of_pass (screenshot path)"
@@ -254,14 +263,15 @@ def flow_runner():
     return BaseFlowRunner()
 
 
+@pytest.mark.asyncio
 @pytest.mark.e2e
 @pytest.mark.parametrize("steps_path", [
     "tests/data/flows/failed_login.md",
     "tests/data/flows/demo_login.md",
 ])
-def test_generic_web_flows(flow_runner, steps_path: str):
+async def test_generic_web_flows(flow_runner, steps_path: str):
     steps = pathlib.Path(steps_path).read_text(encoding="utf-8")
-    result = flow_runner.run_flow(steps, RunResult)
+    result = await flow_runner.run(steps, RunResult)
     print(result)
     assert result.status == "PASS", f"Failed: {result.exception} at {result.failed_step_id}"
 ```
@@ -285,15 +295,16 @@ In **MCP Playwright tests**, the overall **PASS/FAIL status** is determined by t
 
 ### Example
 ```python
+@pytest.mark.asyncio
 @pytest.mark.parametrize("steps_path", [
     "tests/data/flows/verify_company_name.md",
 ])
-def test_verify_company_name(flow_runner, steps_path: str):
+async def test_verify_company_name(flow_runner, steps_path: str):
     # Read the markdown file with flow steps
     steps = pathlib.Path(steps_path).read_text(encoding="utf-8")
 
-    # Run the flow
-    result = flow_runner.run_flow(steps, RunResult)
+    # Run the flow asynchronously
+    result = await flow_runner.run(steps, RunResult)
     print(result)
 
     # Assert overall flow passed
@@ -392,10 +403,10 @@ This ensures your automation **guides the AI and verifies critical validations**
 When running the flow:
 
 ```python
-result = flow_runner.run_flow(steps, CustomRunResult)
+result = await flow_runner.run(steps, CustomRunResult)
 ```
 
-* The `CustomRunResult` is passed to the agent
+* The `CustomRunResult` is passed to the agent (must be awaited)
 * We then assert:
 
 ```python
@@ -427,10 +438,11 @@ load_dotenv(override=True)
 def flow_runner():
     return BaseFlowRunner()
 
+@pytest.mark.asyncio
 @pytest.mark.parametrize("steps_path", [
     "tests/data/flows/verify_only_digits_allowed.md",
 ])
-def test_generic_phone_number(flow_runner, steps_path: str):
+async def test_generic_phone_number(flow_runner, steps_path: str):
     username = os.environ.get("CRM_USERNAME")
     password = os.environ.get("CRM_PASSWORD")
 
@@ -446,8 +458,8 @@ def test_generic_phone_number(flow_runner, steps_path: str):
     class CustomRunResult(RunResult):
         phone_validation_passed: bool = Field(description="True if phone validation message appeared, else False")
 
-    # Run the flow and get results in the custom result class
-    result = flow_runner.run_flow(steps, CustomRunResult)
+    # Run the flow asynchronously and get results in the custom result class
+    result = await flow_runner.run(steps, CustomRunResult)
 
     print(result) # Print result, if -s flag is enabled
     assert result.status == "PASS", f"Failed: {result.exception} at {result.failed_step_id}"
@@ -510,7 +522,7 @@ The above function reads the secret key from `D365_MFA_KEY` and returns a one-ti
 The tool is then passed into the flow runner:
 
 ```python
-result = flow_runner.run_flow(steps, RunResult, tools=[get_totp])
+result = await flow_runner.run(steps, RunResult, tools=[get_totp])
 ```
 
 This ensures the agent generates the code just-in-time, instead of relying on an expired value. Calling the function directly and placing the result in your test steps file will not work, because the code will expire before the step is executed.
@@ -588,7 +600,7 @@ async with MCPServerStdio(
     client_session_timeout_seconds=120,
     tool_filter=create_static_tool_filter(allowed_tool_names=["create_record"])
 ) as dataverse_mcp:
-    result = await flow_runner._run_agent_flow(
+    result = await flow_runner.run(
         steps,
         RunResult,
         tools=[get_totp],
@@ -699,7 +711,7 @@ async def test_business_process_opportunity(flow_runner, steps_path):
         client_session_timeout_seconds=120,
         tool_filter=create_static_tool_filter(allowed_tool_names=["create_record"])
     ) as dataverse_mcp:
-        result = await flow_runner._run_agent_flow(
+        result = await flow_runner.run(
             steps,
             RunResult,
             tools=[get_totp],
@@ -751,8 +763,9 @@ You can control how your test runs appear in the trace dashboard using the `trac
 When you don't provide a `trace_name`, the framework uses `"web_flow"` as the default:
 
 ```python
-def test_login():
-    result = runner.run_flow(steps, RunResult)
+@pytest.mark.asyncio
+async def test_login():
+    result = await runner.run(steps, RunResult)
     # Trace name: "web_flow"
 ```
 
@@ -761,8 +774,9 @@ def test_login():
 Pass a custom `trace_name` for specific test case identifiers:
 
 ```python
-def test_login():
-    result = runner.run_flow(
+@pytest.mark.asyncio
+async def test_login():
+    result = await runner.run(
         steps, 
         RunResult, 
         trace_name="TC_LOGIN_001"  # Custom trace name
@@ -780,8 +794,9 @@ This is useful when you want to:
 The framework provides a `trace_name` fixture that automatically uses the test function name:
 
 ```python
-def test_login_with_valid_credentials(flow_runner, trace_name):
-    result = flow_runner.run_flow(
+@pytest.mark.asyncio
+async def test_login_with_valid_credentials(flow_runner, trace_name):
+    result = await flow_runner.run(
         steps, 
         RunResult, 
         trace_name=trace_name

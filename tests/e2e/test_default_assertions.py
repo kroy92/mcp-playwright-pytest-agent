@@ -16,10 +16,11 @@ def flow_runner():
 
 
 
+@pytest.mark.asyncio
 @pytest.mark.parametrize("steps_path", [
     "tests/data/flows/verify_company_name.md",
 ])
-def test_generic_phone_number(flow_runner, steps_path: str):
+async def test_generic_phone_number(flow_runner, steps_path: str):
     username = os.environ.get("CRM_USERNAME")
     password = os.environ.get("CRM_PASSWORD")
 
@@ -30,7 +31,7 @@ def test_generic_phone_number(flow_runner, steps_path: str):
     steps_template = pathlib.Path(steps_path).read_text(encoding="utf-8")
     steps = steps_template.format(username=username, password=password)
 
-    result = flow_runner.run_flow(steps, RunResult)
+    result = await flow_runner.run(steps, RunResult)
     print(result)
     assert result.status == "PASS", f"Failed: {result.exception} at {result.failed_step_id}"
     for step in result.steps:

@@ -13,17 +13,20 @@ Classes
 
 Usage
 -----
-The schemas are passed to `run_flow()` as the output type:
+The schemas are passed to `run()` as the output type:
 
     from playwright_agent import BaseFlowRunner, RunResult
+    import pytest
     
-    runner = BaseFlowRunner()
-    result = runner.run_flow(steps, RunResult)  # Returns RunResult instance
-    
-    # Access results
-    print(f"Overall: {result.status}")
-    for step in result.steps:
-        print(f"Step {step.step_id}: {step.status}")
+    @pytest.mark.asyncio
+    async def test_example():
+        runner = BaseFlowRunner()
+        result = await runner.run(steps, RunResult)  # Returns RunResult instance
+        
+        # Access results
+        print(f"Overall: {result.status}")
+        for step in result.steps:
+            print(f"Step {step.step_id}: {step.status}")
 
 Custom Assertions
 -----------------
@@ -35,7 +38,7 @@ You can extend RunResult with custom fields for domain-specific checks:
         user_logged_in: bool = Field(description="True if login succeeded")
         dashboard_visible: bool = Field(description="True if dashboard loaded")
     
-    result = runner.run_flow(steps, LoginResult)
+    result = await runner.run(steps, LoginResult)
     assert result.user_logged_in
 
 """
@@ -88,7 +91,7 @@ class RunResult(BaseModel):
     """
     Overall result schema for a complete web flow execution.
     
-    This is the primary output type for `run_flow()`. It contains the
+    This is the primary output type for `run()`. It contains the
     overall pass/fail status plus detailed results for every step.
     
     Attributes:
@@ -100,7 +103,7 @@ class RunResult(BaseModel):
         summary: High-level summary of the entire test run
     
     Example:
-        result = runner.run_flow(steps, RunResult)
+        result = await runner.run(steps, RunResult)
         
         if result.status == "FAIL":
             print(f"Failed at step: {result.failed_step_id}")

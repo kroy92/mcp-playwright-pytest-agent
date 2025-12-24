@@ -4,6 +4,9 @@ Pytest Configuration and Fixtures
 
 This module provides pytest fixtures and configuration for the test suite.
 
+**All tests must be async.** The `pytest.mark.asyncio` marker is applied
+globally via `pytest.ini` or can be added per-test.
+
 Fixtures
 --------
 - `flow_runner`: Session-scoped BaseFlowRunner instance (reused across tests)
@@ -11,10 +14,11 @@ Fixtures
 
 Usage
 -----
-Fixtures are automatically available in test functions:
+Fixtures are automatically available in async test functions:
 
-    def test_login(flow_runner, trace_name):
-        result = flow_runner.run_flow(
+    @pytest.mark.asyncio
+    async def test_login(flow_runner, trace_name):
+        result = await flow_runner.run(
             steps,
             RunResult,
             trace_name=trace_name  # "test_login" in OpenAI dashboard
@@ -33,6 +37,9 @@ import platform
 import asyncio
 import pytest
 from playwright_agent.runtime.base import BaseFlowRunner
+
+# Apply asyncio marker to all tests by default
+pytestmark = pytest.mark.asyncio
 
 # Set Windows-compatible asyncio policy for subprocess support
 # Required for MCP servers that run as subprocesses via npx
@@ -56,8 +63,9 @@ def flow_runner() -> BaseFlowRunner:
         BaseFlowRunner instance ready for running web automation flows
         
     Example:
-        def test_search(flow_runner):
-            result = flow_runner.run_flow(
+        @pytest.mark.asyncio
+        async def test_search(flow_runner):
+            result = await flow_runner.run(
                 "Open google.com and search for Playwright",
                 RunResult
             )
@@ -81,8 +89,9 @@ def trace_name(request) -> str:
         The name of the current test function (e.g., "test_login")
         
     Example:
-        def test_checkout(flow_runner, trace_name):
-            result = flow_runner.run_flow(
+        @pytest.mark.asyncio
+        async def test_checkout(flow_runner, trace_name):
+            result = await flow_runner.run(
                 steps,
                 RunResult,
                 trace_name=trace_name  # "test_checkout" in dashboard

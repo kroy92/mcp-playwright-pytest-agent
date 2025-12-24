@@ -86,7 +86,7 @@ async def test_business_process_opportunity(flow_runner, steps_path):
         client_session_timeout_seconds=120,
         tool_filter=create_static_tool_filter(allowed_tool_names=["create_record"]) # Restrict to only the create_record tool
     ) as dataverse_mcp:
-        result = await flow_runner._run_agent_flow(
+        result = await flow_runner.run(
             steps,
             RunResult,
             tools=[get_totp],

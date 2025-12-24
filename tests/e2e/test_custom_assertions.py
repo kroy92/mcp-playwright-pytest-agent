@@ -17,10 +17,11 @@ def flow_runner():
 
 
 
+@pytest.mark.asyncio
 @pytest.mark.parametrize("steps_path", [
     "tests/data/flows/verify_only_digits_allowed.md",
 ])
-def test_generic_phone_number(flow_runner, steps_path: str):
+async def test_generic_phone_number(flow_runner, steps_path: str):
     username = os.environ.get("CRM_USERNAME")
     password = os.environ.get("CRM_PASSWORD")
 
@@ -37,7 +38,7 @@ def test_generic_phone_number(flow_runner, steps_path: str):
         phone_validation_passed: bool = Field(description="True if phone validation message appeared, else False")
 
     # Run the flow and get results in the custom result class
-    result = flow_runner.run_flow(steps, CustomRunResult)
+    result = await flow_runner.run(steps, CustomRunResult)
 
     print(result) # Print result, if -s flag is enabled
     assert result.status == "PASS", f"Failed: {result.exception} at {result.failed_step_id}"

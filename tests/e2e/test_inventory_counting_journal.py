@@ -16,10 +16,11 @@ def flow_runner():
 
 
 
+@pytest.mark.asyncio
 @pytest.mark.parametrize("steps_path", [
     "tests/data/flows/ICJ.md",
 ])
-def test_ICJ(flow_runner, steps_path: str):
+async def test_ICJ(flow_runner, steps_path: str):
     url = os.environ.get("D365_FO_URL")
     username = os.environ.get("D365_FO_USERNAME")
     password = os.environ.get("D365_FO_PASSWORD")
@@ -34,7 +35,7 @@ def test_ICJ(flow_runner, steps_path: str):
     class CustomRunResult(RunResult):
         journal_number: str | None = Field(description="The created journal number in step 5, if not created and error occurred, this will be None")
 
-    result = flow_runner.run_flow(steps, CustomRunResult)
+    result = await flow_runner.run(steps, CustomRunResult)
     print(result)
     assert result.status == "PASS", f"Failed: {result.exception} at {result.failed_step_id}"
     for step in result.steps:

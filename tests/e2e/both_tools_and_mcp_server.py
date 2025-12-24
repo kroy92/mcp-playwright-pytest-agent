@@ -74,7 +74,7 @@ Close Bugs:
         journal_number: str | None = Field(description="The created journal number in step 5, if not created and error occurred, this will be None")
 
     async with MCPServerStdio(params=ado_mcp_params, client_session_timeout_seconds=30) as ado_tools:
-        result = await flow_runner._run_agent_flow(
+        result = await flow_runner.run(
             user_step,
             CustomRunResult,
             mcp_servers=[ado_tools],

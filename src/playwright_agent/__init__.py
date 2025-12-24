@@ -16,9 +16,11 @@ Quick Start
 
 2. Write a test:
     ```python
+    import pytest
     from playwright_agent import BaseFlowRunner, RunResult
     
-    def test_login():
+    @pytest.mark.asyncio
+    async def test_login():
         runner = BaseFlowRunner()
         steps = '''
         Open https://example.com/login
@@ -27,7 +29,7 @@ Quick Start
         Click the Login button
         Verify the Dashboard page loads
         '''
-        result = runner.run_flow(steps, RunResult)
+        result = await runner.run(steps, RunResult)
         assert result.status == "PASS"
     ```
 

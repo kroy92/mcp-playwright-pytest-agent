@@ -11,13 +11,14 @@ def flow_runner():
     return BaseFlowRunner()
 
 
+@pytest.mark.asyncio
 @pytest.mark.e2e
 @pytest.mark.parametrize("steps_path", [
     "tests/data/flows/failed_login.md",
     "tests/data/flows/demo_login.md",
 ])
-def test_generic_web_flows(flow_runner, steps_path: str):
+async def test_generic_web_flows(flow_runner, steps_path: str):
     steps = pathlib.Path(steps_path).read_text(encoding="utf-8")
-    result = flow_runner.run_flow(steps, RunResult)
+    result = await flow_runner.run(steps, RunResult)
     print(result)
     assert result.status == "PASS", f"Failed: {result.exception} at {result.failed_step_id}"

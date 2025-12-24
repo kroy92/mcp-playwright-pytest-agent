@@ -17,11 +17,14 @@ Exceptions
 
 Typical usage is via BaseFlowRunner:
 
+    import pytest
     from playwright_agent.runtime import BaseFlowRunner
     from playwright_agent import RunResult
     
-    runner = BaseFlowRunner()
-    result = runner.run_flow(steps, RunResult)
+    @pytest.mark.asyncio
+    async def test_example():
+        runner = BaseFlowRunner()
+        result = await runner.run(steps, RunResult)
 
 """
 

@@ -44,7 +44,7 @@ Example Python API (planned):
         wait_for("Dashboard")
     )
     
-    result = runner.run_flow(flow, RunResult)
+    result = await runner.run(flow, RunResult)
 
 Status: Not yet implemented - using natural language steps for now.
 """
