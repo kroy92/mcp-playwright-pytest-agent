@@ -1,3 +1,58 @@
+"""
+Base Flow Runner - Main Entry Point for Web Automation Tests
+=============================================================
+
+This module provides `BaseFlowRunner`, the primary class for running
+AI-powered web automation tests. It orchestrates:
+- MCP server lifecycle (Playwright browser automation)
+- AI agent execution (OpenAI Agents SDK)
+- Result collection and error handling
+
+Key Class: BaseFlowRunner
+-------------------------
+The main entry point for pytest tests. It handles all the complexity
+of setting up MCP servers, configuring the AI agent, and executing
+natural language test steps.
+
+Usage
+-----
+Basic usage in a pytest test:
+
+    from playwright_agent import BaseFlowRunner, RunResult
+    
+    def test_login():
+        runner = BaseFlowRunner()
+        steps = '''
+        Open https://example.com/login
+        Enter "user@test.com" in Email field
+        Enter "password" in Password field
+        Click Login button
+        Verify Dashboard page appears
+        '''
+        result = runner.run_flow(steps, RunResult)
+        assert result.status == "PASS"
+
+With custom tools:
+
+    from agents import function_tool
+    
+    @function_tool
+    def get_mfa_code() -> str:
+        '''Generate MFA code.'''
+        return "123456"
+    
+    result = runner.run_flow(steps, RunResult, tools=[get_mfa_code])
+
+With tracing for debugging:
+
+    result = runner.run_flow(
+        steps, 
+        RunResult, 
+        trace_name="TC_LOGIN_001"  # Shows in OpenAI trace dashboard
+    )
+
+"""
+
 from __future__ import annotations
 import asyncio
 import logging
@@ -33,7 +88,40 @@ def _load_instructions(path: Path | None) -> str:
 
 
 class BaseFlowRunner:
-    """Pytest-facing base class to run human-readable web flows through MCP Playwright Agent."""
+    """
+    Main entry point for running AI-powered web automation flows.
+    
+    This class provides a pytest-friendly interface for executing natural
+    language test steps using Playwright MCP for browser automation and
+    OpenAI Agents for intelligent execution.
+    
+    The runner handles:
+    - Loading configuration from environment variables
+    - Starting and managing MCP servers (Playwright browser)
+    - Configuring and running the AI agent
+    - Collecting structured results for assertions
+    
+    Attributes:
+        settings: Application settings (Azure OpenAI, timeouts, etc.)
+        server_manager: Factory for creating MCP servers
+        instructions: System prompt loaded from instructions file
+    
+    Example:
+        # Basic usage
+        runner = BaseFlowRunner()
+        result = runner.run_flow("Open google.com", RunResult)
+        
+        # With custom instructions
+        runner = BaseFlowRunner(instructions_path=Path("my_instructions.md"))
+        
+        # With fixtures (recommended)
+        @pytest.fixture
+        def flow_runner():
+            return BaseFlowRunner()
+        
+        def test_example(flow_runner):
+            result = flow_runner.run_flow(steps, RunResult)
+    """
 
     def __init__(self, instructions_path: Path | None = None):
         """

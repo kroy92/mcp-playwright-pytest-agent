@@ -1,3 +1,40 @@
+"""
+Configuration Management for MCP Playwright Agent
+==================================================
+
+This module handles all configuration settings for the framework, including:
+- Azure OpenAI credentials and API settings
+- MCP server timeouts and directories
+- Agent behavior settings (max turns, step timeouts)
+- Logging configuration
+
+Configuration Sources
+---------------------
+Settings are loaded from environment variables or a `.env` file.
+Required variables:
+- AZURE_OPENAI_DEPLOYMENT: Your Azure OpenAI deployment name
+- AZURE_OPENAI_ENDPOINT: Your Azure OpenAI endpoint URL
+- AZURE_OPENAI_API_KEY: Your Azure OpenAI API key
+
+Optional variables:
+- D365_MFA_KEY: TOTP secret for MFA (if using MFA tool)
+- VIEWPORT: Browser viewport size (default: "1600,900")
+- TIMEOUT_SECONDS: Action timeout in ms (default: 5000)
+- MAX_TURNS: Maximum agent conversation turns (default: 1000)
+- MCP_CLIENT_TIMEOUT_SECONDS: MCP tool timeout (default: 120)
+
+Usage
+-----
+    from playwright_agent.settings import get_settings, ConfigurationError
+    
+    try:
+        settings = get_settings()
+        print(f"Using deployment: {settings.azure_openai_deployment}")
+    except ConfigurationError as e:
+        print(f"Configuration error: {e}")
+
+"""
+
 from __future__ import annotations
 import logging
 import os
@@ -6,6 +43,7 @@ from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from dotenv import load_dotenv
 
+# Load environment variables from .env file (override existing)
 load_dotenv(override=True)
 
 # Configure logging - reduce noise from external libraries
@@ -24,12 +62,47 @@ logging.getLogger("mcp").setLevel(logging.WARNING)
 
 
 class ConfigurationError(Exception):
-    """Raised when required configuration is missing or invalid."""
+    """
+    Raised when required configuration is missing or invalid.
+    
+    This exception is raised during settings initialization if:
+    - Required Azure OpenAI credentials are missing
+    - Environment variables have invalid values
+    - Configuration file cannot be read
+    
+    Example:
+        try:
+            settings = get_settings()
+        except ConfigurationError as e:
+            print(f"Please check your .env file: {e}")
+    """
     pass
 
 
 class Settings(BaseSettings):
-    # Azure OpenAI
+    """
+    Application settings loaded from environment variables.
+    
+    This class uses Pydantic's BaseSettings for automatic environment
+    variable loading and validation. All settings can be overridden
+    via environment variables or a .env file.
+    
+    Attributes:
+        azure_openai_deployment: Name of the Azure OpenAI deployment
+        azure_openai_endpoint: Azure OpenAI service endpoint URL
+        azure_openai_api_key: API key for Azure OpenAI authentication
+        azure_openai_api_version: API version (default: 2025-04-01-preview)
+        mfa_key: Optional TOTP secret for MFA code generation
+        mcp_isolated_dir: Directory for isolated browser data
+        mcp_output_dir: Directory for MCP server outputs
+        viewport: Browser viewport dimensions as "width,height"
+        timeout_seconds: Default action timeout in milliseconds
+        default_step_timeout_seconds: Step-level timeout for retries
+        max_turns: Maximum conversation turns for the AI agent
+        mcp_client_timeout_seconds: Timeout for MCP tool calls
+    """
+    
+    # Azure OpenAI Configuration
     azure_openai_deployment: str | None = os.getenv("AZURE_OPENAI_DEPLOYMENT")
     azure_openai_endpoint: str | None = os.getenv("AZURE_OPENAI_ENDPOINT")
     azure_openai_api_key: str | None = os.getenv("AZURE_OPENAI_API_KEY")

@@ -1,8 +1,51 @@
+"""
+Agent Runner - AI Agent Execution Engine
+========================================
+
+This module contains `AgentRunner`, which executes web automation flows
+using the OpenAI Agents SDK. It handles:
+- Creating and configuring the AI agent
+- Running the agent with MCP tools (Playwright browser automation)
+- Tracing for observability and debugging
+- Error handling with specific exception types
+
+The runner is used internally by `BaseFlowRunner` and typically not
+called directly by test code.
+
+Architecture
+------------
+```
+BaseFlowRunner
+    └── AgentRunner
+            ├── OpenAI Agent (with instructions)
+            ├── MCP Servers (Playwright, filesystem, etc.)
+            ├── Custom Tools (MFA, custom assertions, etc.)
+            └── Output Schema (RunResult, custom Pydantic models)
+```
+
+Tracing
+-------
+All agent executions are wrapped in a trace context for observability.
+The trace_name parameter controls how runs appear in the OpenAI dashboard:
+
+    # Default trace name
+    runner.run(prompt)  # trace: "web_flow"
+    
+    # Custom trace name
+    AgentRunner(..., trace_name="TC_LOGIN_001").run(prompt)
+
+Exception Hierarchy
+-------------------
+- `AgentExecutionError`: Base exception for agent failures
+- `MCPToolError`: Specific MCP tool call failures (inherits from AgentExecutionError)
+
+"""
+
 from __future__ import annotations
 import logging
 from typing import Any, TypeVar
 
-# Provided by your agents SDK
+# OpenAI Agents SDK imports
 from agents import Agent, Runner, trace, OpenAIChatCompletionsModel, OpenAIResponsesModel  # type: ignore[import-not-found]
 from agents.model_settings import ModelSettings  # type: ignore[import-not-found]
 from agents.exceptions import AgentsException  # type: ignore[import-not-found]
@@ -33,7 +76,36 @@ class MCPToolError(AgentExecutionError):
 
 
 class AgentRunner:
-    """Executes a flow via MCP Playwright and returns typed results for pytest assertions."""
+    """
+    Executes web automation flows via MCP Playwright and OpenAI Agent.
+    
+    This class is the core execution engine that:
+    1. Creates an OpenAI Agent with the given instructions and tools
+    2. Runs the agent with the user's test steps as input
+    3. Collects structured output matching the provided schema
+    4. Handles errors and timeouts gracefully
+    
+    Typically used internally by BaseFlowRunner, not directly by tests.
+    
+    Attributes:
+        settings: Application settings (model, timeouts, etc.)
+        instructions: System prompt for the AI agent
+        output_type: Pydantic model class for structured output
+        mcp_servers: List of MCP servers (Playwright, filesystem, etc.)
+        tools: List of custom tools (functions decorated with @function_tool)
+        trace_name: Identifier for this run in the OpenAI trace dashboard
+    
+    Example (internal usage):
+        runner = AgentRunner(
+            instructions="You are a test automation agent...",
+            output_type=RunResult,
+            mcp_servers=[browser_server],
+            settings=settings,
+            tools=[get_mfa_code],
+            trace_name="test_login"
+        )
+        result = await runner.run("Open google.com and search for Playwright")
+    """
 
     def __init__(self, instructions: str, output_type, mcp_servers: list, settings: Settings, tools: list, trace_name: str):
         self.settings = settings

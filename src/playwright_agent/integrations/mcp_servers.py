@@ -1,10 +1,54 @@
+"""
+MCP Server Management
+=====================
+
+This module provides factory classes for creating Model Context Protocol (MCP)
+servers used for browser automation and other capabilities.
+
+Supported MCP Servers
+---------------------
+1. **Playwright Browser Server** (`@playwright/mcp`)
+   - Browser automation (navigation, clicking, typing, screenshots)
+   - Runs in isolated mode with configurable viewport
+   - Blocks dangerous tools like `browser_run_code`
+
+2. **Filesystem Server** (`@modelcontextprotocol/server-filesystem`)
+   - Read/write files in isolated directories
+   - Useful for downloading files during tests
+
+3. **Knowledge Graph Memory** (`@modelcontextprotocol/server-memory`)
+   - Persistent memory for locator hints and test data
+   - Helps with self-healing tests
+
+Usage
+-----
+Servers are created via `MCPServerManager` and used as async context managers:
+
+    manager = MCPServerManager(settings)
+    
+    # Browser automation
+    async with await manager.get_browser_server() as browser:
+        # browser is now available as an MCP server
+        result = await runner.run(steps, mcp_servers=[browser])
+
+Configuration
+-------------
+Server behavior is controlled via Settings:
+- `mcp_client_timeout_seconds`: Timeout for MCP tool calls
+- `mcp_isolated_dir`: Directory for browser isolation
+- `mcp_output_dir`: Directory for server outputs
+- `viewport`: Browser viewport size ("width,height")
+- `timeout_seconds`: Default action timeout
+
+"""
+
 from __future__ import annotations
 import logging
 from typing import Any
 
 from playwright_agent.settings import Settings
 
-# Provided by your MCP/agents SDK
+# MCP SDK imports for server management
 from agents.mcp import MCPServerStdio, create_static_tool_filter  # type: ignore[import-not-found]
 
 logger = logging.getLogger("playwright_agent.mcp_servers")
@@ -20,9 +64,37 @@ class MCPServerError(Exception):
 
 
 class MCPServerManager:
-    """Factory for browser and filesystem MCP servers."""
+    """
+    Factory for creating and configuring MCP servers.
+    
+    This class creates properly configured MCP server instances for
+    different purposes (browser automation, file operations, memory).
+    Each server runs as a subprocess via npx.
+    
+    The manager uses settings to configure timeouts, directories, and
+    other server-specific options.
+    
+    Attributes:
+        settings: Application settings for server configuration
+    
+    Example:
+        manager = MCPServerManager(get_settings())
+        
+        # Get a browser server
+        browser = await manager.get_browser_server()
+        async with browser as ctx:
+            # Use browser for automation
+            pass
+        
+        # Get a knowledge graph server
+        kg = await manager.get_knowledge_graph_based_memory("memory.json")
+        async with kg as ctx:
+            # Use for persistent memory
+            pass
+    """
 
     def __init__(self, settings: Settings):
+        """Initialize the server manager with application settings."""
         self.settings = settings
 
     async def get_browser_server(self) -> MCPServerStdio:
