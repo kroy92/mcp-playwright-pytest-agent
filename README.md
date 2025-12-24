@@ -33,6 +33,9 @@
     - [2. **Launching and Using the MCP Server in Your Test**](#2-launching-and-using-the-mcp-server-in-your-test)
     - [3. **Assertions and Step Results**](#3-assertions-and-step-results)
   - [Full Example: test\_example\_with\_dataverse\_mcp.py](#full-example-test_example_with_dataverse_mcppy)
+- [**Tracing with OpenAI Agent SDK**](#tracing-with-openai-agent-sdk)
+  - [Setting the Trace Name](#setting-the-trace-name)
+  - [Which Approach to Use?](#which-approach-to-use)
 
 ## **mcp-playwright-pytest-agent**
 
